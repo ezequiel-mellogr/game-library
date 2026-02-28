@@ -31,7 +31,9 @@ export default function AddGameForm() {
                 original_url: data.original_url,
                 status: 'pending',
                 score: null,
-                notes: null
+                notes: null,
+                screenshots: data.screenshots || [],
+                download_link: data.download_link || null
             });
         } catch (err: any) {
             setError(err.message);
@@ -142,6 +144,28 @@ export default function AddGameForm() {
                             <option value="dropped">Abandonado</option>
                         </select>
                     </div>
+
+                    <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-400 mb-2">Enlace de Descarga (Opcional)</label>
+                        <input
+                            type="url"
+                            value={preview.download_link || ''}
+                            onChange={(e) => setPreview({ ...preview, download_link: e.target.value })}
+                            className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
+                            placeholder="https://www.mediafire.com/file/..."
+                        />
+                    </div>
+
+                    {preview.screenshots && preview.screenshots.length > 0 && (
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Capturas extraídas ({preview.screenshots.length})</label>
+                            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
+                                {preview.screenshots.map((src, i) => (
+                                    <img key={i} src={src} alt={`Screenshot ${i}`} className="h-20 w-32 object-cover rounded shadow-md border border-white/10 shrink-0" />
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-3">
                         <button

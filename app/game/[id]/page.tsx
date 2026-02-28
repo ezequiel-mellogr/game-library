@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Game, GameStatus } from '@/lib/types';
 import StatusBadge from '@/components/StatusBadge';
+import ImageCarousel from '@/components/ImageCarousel';
 
-export default function GameDetailPage({ params }: { params: { id: string } }) {
+export default function GameDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
+    const { id } = use(params);
     const [game, setGame] = useState<Game | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -23,7 +25,7 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
             const { data, error } = await supabase
                 .from('games')
                 .select('*')
-                .eq('id', params.id)
+                .eq('id', id)
                 .single();
 
             if (data) {
@@ -36,7 +38,7 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
         };
 
         fetchGame();
-    }, [params.id]);
+    }, [id]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -50,7 +52,7 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
                 score: parsedScore,
                 notes
             })
-            .eq('id', params.id);
+            .eq('id', id);
 
         setSaving(false);
         if (!error && game) {
@@ -62,7 +64,7 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
 
     const handleDelete = async () => {
         if (confirm('¿Estás seguro de que deseas eliminar este juego de tu biblioteca?')) {
-            await supabase.from('games').delete().eq('id', params.id);
+            await supabase.from('games').delete().eq('id', id);
             router.push('/');
             router.refresh();
         }
@@ -101,9 +103,21 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
                             )}
                         </div>
 
-                        <div className="bg-[#1a1a2e] p-6 rounded-2xl border border-white/5">
+                        <div className="bg-[#1a1a2e] p-6 rounded-2xl border border-white/5 space-y-4">
                             <h3 className="font-bold text-gray-400 mb-2">Detalles</h3>
-                            <p className="text-sm mb-4"><span className="text-gray-500">Añadido:</span> {new Date(game.created_at).toLocaleDateString()}</p>
+                            <p className="text-sm"><span className="text-gray-500">Añadido:</span> {new Date(game.created_at).toLocaleDateString()}</p>
+
+                            {game.download_link && (
+                                <a
+                                    href={game.download_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block w-full text-center py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20"
+                                >
+                                    Descargar de MediaFire
+                                </a>
+                            )}
+
                             <a
                                 href={game.original_url}
                                 target="_blank"
@@ -115,15 +129,22 @@ export default function GameDetailPage({ params }: { params: { id: string } }) {
                         </div>
                     </div>
 
-                    {/* Right Column: Editing Form */}
+                    {/* Right Column: Editing Form & Screenshots */}
                     <div className="lg:col-span-2 space-y-6">
                         <div>
                             <div className="flex items-center gap-4 mb-2">
                                 <h1 className="text-4xl font-extrabold">{game.title}</h1>
                                 <StatusBadge status={game.status} />
                             </div>
-                            <p className="text-gray-400 text-lg">{game.description}</p>
+                            <p className="text-gray-400 text-lg whitespace-pre-wrap">{game.description}</p>
                         </div>
+
+                        {game.screenshots && game.screenshots.length > 0 && (
+                            <div className="bg-[#1a1a2e] p-6 rounded-2xl border border-white/5">
+                                <h2 className="text-xl font-bold mb-4">Capturas</h2>
+                                <ImageCarousel images={game.screenshots} />
+                            </div>
+                        )}
 
                         <div className="bg-[#1a1a2e] p-8 rounded-2xl border border-white/5 mt-8">
                             <h2 className="text-2xl font-bold mb-6">Tu Experiencia</h2>
