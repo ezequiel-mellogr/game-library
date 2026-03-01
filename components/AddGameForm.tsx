@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import { NewGame, GameStatus } from '@/lib/types';
 import ImageCarousel from './ImageCarousel';
 
@@ -29,6 +30,15 @@ export default function AddGameForm() {
 
             if (!res.ok) throw new Error(data.error || 'Error fetching metadata');
 
+            // --- Check for Duplicates ---
+            const { data: existingGames } = await supabase
+                .from('games')
+                .select('id, title, original_url')
+                .or(`title.ilike.%${data.title}%,original_url.eq.${data.original_url}`);
+
+            const isDuplicate = existingGames && existingGames.length > 0;
+            // ---------------------------
+
             setPreview({
                 title: data.title,
                 description: data.description,
@@ -40,6 +50,10 @@ export default function AddGameForm() {
                 screenshots: data.screenshots || [],
                 download_link: data.download_link || null
             });
+
+            if (isDuplicate) {
+                setError('⚠️ Este juego ya parece estar en tu biblioteca.');
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
