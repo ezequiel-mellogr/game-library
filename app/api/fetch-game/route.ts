@@ -37,32 +37,48 @@ export async function GET(request: Request) {
         // The cover image returned by Microlink — we want to EXCLUDE this from screenshots
         const coverImageUrl = data.status === 'success' ? (data.data.image?.url || null) : null;
 
+        // Also grab the og:image to use for exclusion comparison
+        const ogImageUrl = $('meta[property="og:image"]').attr('content') || null;
+
         // Helper: add valid screenshot URL (avoid dupes, placeholders, and cover image)
         const addScreenshot = (imgUrl: string | undefined) => {
             if (!imgUrl) return;
             if (imgUrl.startsWith('data:')) return;
             if (seenUrls.has(imgUrl)) return;
-            // Skip the cover/og image — it's already shown separately
-            if (coverImageUrl && imgUrl === coverImageUrl) return;
-            // Only allow http(s), skip icons/gifs/svgs
+            // Only allow http(s), skip icons/svgs (allow gif — some screenshots are gifs)
             if (!/^https?:\/\//.test(imgUrl)) return;
-            if (/\.(ico|gif|svg)(\?|$)/i.test(imgUrl)) return;
-            // Skip images that are very likely to be site UI (logos, avatars, banners)
-            // by checking common URL patterns
-            const lowerUrl = imgUrl.toLowerCase();
-            if (lowerUrl.includes('/avatar') || lowerUrl.includes('/logo') || lowerUrl.includes('/banner') || lowerUrl.includes('/icon') || lowerUrl.includes('gravatar.com')) return;
+            if (/\.(ico|svg)(\?|$)/i.test(imgUrl)) return;
+            // Skip the cover/og image — it's already shown separately as image_url
+            if (coverImageUrl && imgUrl === coverImageUrl) return;
+            if (ogImageUrl && imgUrl === ogImageUrl) return;
             seenUrls.add(imgUrl);
             extractedScreenshots.push(imgUrl);
         };
 
-        // Containers that are known to hold only navigation/UI images — skip these entirely
+        // Resolve the real image URL from a lazy-loaded img element.
+        // WordPress sites use data-img-url, data-src, or data-lazy-src.
+        // The src attr may be a tiny 1x1 GIF placeholder or a data URI.
+        const resolveImgSrc = ($img: ReturnType<typeof $>): string => {
+            const src = $img.attr('src') || '';
+            const lazySrc =
+                $img.attr('data-img-url') ||
+                $img.attr('data-src') ||
+                $img.attr('data-lazy-src') ||
+                $img.attr('data-original') || '';
+            // If src is a placeholder (data URI, a 1×1 gif, or ends in .gif), use lazySrc
+            if (src.startsWith('data:') || /1x1|placeholder|blank/i.test(src) || src.endsWith('.gif')) {
+                return lazySrc || src;
+            }
+            return src || lazySrc;
+        };
+
+        // Containers that hold only navigation/UI images — skip images inside these
         const skipContainerSelector = [
             '.td-module-thumb',
             '.td-related-span',
             '.td-related-title',
             '.td-sidebar',
             '#sidebar',
-            '.widget',
             '.td-header-wrap',
             'header',
             'footer',
@@ -78,25 +94,19 @@ export async function GET(request: Request) {
                 const $img = $(el);
                 // Skip images inside navigation/sidebar/related-post containers
                 if ($img.closest(skipContainerSelector).length) return;
-                // Skip very small images (likely icons/thumbnails) by checking width/height attrs
+                // Skip very small images (likely icons/avatars) — only if explicit attr < 100px
                 const width = parseInt($img.attr('width') || '0', 10);
                 const height = parseInt($img.attr('height') || '0', 10);
-                if ((width > 0 && width < 200) || (height > 0 && height < 150)) return;
-                const src = $img.attr('src');
-                const dataImg = $img.attr('data-img-url') || $img.attr('data-src') || $img.attr('data-lazy-src');
-                // Prefer lazy-load source over placeholder data URI
-                const resolvedSrc = src?.startsWith('data:') ? dataImg : src;
-                addScreenshot(resolvedSrc);
-                // Also add the data-img-url variant if different
-                if (dataImg && dataImg !== resolvedSrc) addScreenshot(dataImg);
+                if ((width > 0 && width < 100) || (height > 0 && height < 100)) return;
+
+                addScreenshot(resolveImgSrc($img));
             });
             if (extractedScreenshots.length > 0) break;
         }
 
         // Fallback: og:image only if still nothing found AND it differs from cover
         if (extractedScreenshots.length === 0) {
-            const ogImage = $('meta[property="og:image"]').attr('content');
-            if (ogImage && ogImage !== coverImageUrl) addScreenshot(ogImage);
+            if (ogImageUrl && ogImageUrl !== coverImageUrl) addScreenshot(ogImageUrl);
         }
 
         $('a').each((_, el) => {
