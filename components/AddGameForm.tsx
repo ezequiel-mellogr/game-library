@@ -162,6 +162,7 @@ export default function AddGameForm() {
                             value={preview.status}
                             onChange={(e) => setPreview({ ...preview, status: e.target.value as GameStatus })}
                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 appearance-none"
+                            title="Estado inicial del juego"
                         >
                             <option value="pending">Pendiente (Quiero jugarlo)</option>
                             <option value="playing">Jugando actualmente</option>

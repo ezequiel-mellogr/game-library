@@ -6,13 +6,12 @@ import GameCard from './GameCard';
 import GameListItem from './GameListItem';
 
 export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
-    const [games] = useState<Game[]>(initialGames);
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState<GameStatus | 'all'>('all');
     const [sortBy, setSortBy] = useState<'date' | 'title' | 'score'>('date');
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    const filteredGames = games
+    const filteredGames = initialGames
         .filter(g => statusFilter === 'all' || g.status === statusFilter)
         .filter(g => g.title.toLowerCase().includes(search.toLowerCase()))
         .sort((a, b) => {
@@ -22,7 +21,7 @@ export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
         });
 
     return (
-        <div>
+        <div className="animate-fade-in">
             {/* Controls */}
             <div className="flex flex-col md:flex-row gap-4 mb-8">
                 <div className="flex-1 relative">
@@ -42,7 +41,8 @@ export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
                     <button
                         onClick={() => setViewMode('grid')}
                         className={`p-2 rounded-lg transition-all ${viewMode === 'grid' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                        title="Vista Rejilla"
+                        title="Ver como Rejilla"
+                        aria-label="Ver como Rejilla"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -51,7 +51,8 @@ export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
                     <button
                         onClick={() => setViewMode('list')}
                         className={`p-2 rounded-lg transition-all ${viewMode === 'list' ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-                        title="Vista Lista"
+                        title="Ver como Lista"
+                        aria-label="Ver como Lista"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -59,39 +60,57 @@ export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
                     </button>
                 </div>
 
-                <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 appearance-none min-w-[160px] shadow-sm"
-                >
-                    <option value="all">Todos los estados</option>
-                    <option value="playing">Jugando</option>
-                    <option value="completed">Completado</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="dropped">Abandonado</option>
-                </select>
+                <div className="relative min-w-[160px]">
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value as any)}
+                        title="Filtrar por estado"
+                        aria-label="Filtrar por estado"
+                        className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white outline-none focus:border-purple-500 appearance-none shadow-sm cursor-pointer"
+                    >
+                        <option value="all">Todos los estados</option>
+                        <option value="playing">Jugando</option>
+                        <option value="completed">Completado</option>
+                        <option value="pending">Pendiente</option>
+                        <option value="dropped">Abandonado</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
 
-                <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-[#1a1a2e] border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 appearance-none min-w-[160px] shadow-sm"
-                >
-                    <option value="date">Más recientes</option>
-                    <option value="title">Alfabético</option>
-                    <option value="score">Mejor puntuados</option>
-                </select>
+                <div className="relative min-w-[160px]">
+                    <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as any)}
+                        title="Ordenar por"
+                        aria-label="Ordenar por"
+                        className="w-full bg-[#1a1a2e] border border-white/10 rounded-xl pl-4 pr-10 py-3 text-white outline-none focus:border-purple-500 appearance-none shadow-sm cursor-pointer"
+                    >
+                        <option value="date">Más recientes</option>
+                        <option value="title">Alfabético</option>
+                        <option value="score">Mejor puntuados</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </div>
             </div>
 
             {/* Content Display */}
             {filteredGames.length > 0 ? (
                 viewMode === 'grid' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {filteredGames.map(game => (
                             <GameCard key={game.id} game={game} />
                         ))}
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-4 animate-fade-in">
+                    <div className="flex flex-col gap-4">
                         {filteredGames.map(game => (
                             <GameListItem key={game.id} game={game} />
                         ))}
@@ -100,7 +119,7 @@ export default function GameGrid({ initialGames }: { initialGames: Game[] }) {
             ) : (
                 <div className="text-center py-20 bg-[#1a1a2e]/50 rounded-2xl border border-white/5">
                     <div className="text-gray-500 mb-2">No se encontraron juegos</div>
-                    {games.length === 0 && (
+                    {initialGames.length === 0 && (
                         <p className="text-sm text-gray-400">Aún no has añadido ningún juego a tu biblioteca.</p>
                     )}
                 </div>
