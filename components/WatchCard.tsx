@@ -51,7 +51,7 @@ export default function WatchCard({ item }: { item: WatchItem }) {
                     </div>
 
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500" suppressHydrationWarning>
                             {formatDate(item.created_at)}
                         </span>
                         {item.original_url && (

@@ -101,7 +101,7 @@ export default function WatchDetailPage({ params }: { params: Promise<{ id: stri
                             <h3 className="font-bold text-gray-400 mb-2">Detalles</h3>
                             <p className="text-sm"><span className="text-gray-500">Tipo:</span> {typeLabel}</p>
                             {item.year && <p className="text-sm"><span className="text-gray-500">Año:</span> {item.year}</p>}
-                            <p className="text-sm"><span className="text-gray-500">Añadido:</span> {formatDate(item.created_at)}</p>
+                            <p className="text-sm" suppressHydrationWarning><span className="text-gray-500">Añadido:</span> {formatDate(item.created_at)}</p>
                             {item.original_url && (
                                 <a
                                     href={item.original_url}
@@ -138,6 +138,7 @@ export default function WatchDetailPage({ params }: { params: Promise<{ id: stri
                                             value={status}
                                             onChange={(e) => setStatus(e.target.value as WatchStatus)}
                                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-cyan-500"
+                                            title="Cambiar estado"
                                         >
                                             <option value="want_to_watch">Quiero verla</option>
                                             <option value="watching">Viendo</option>

@@ -106,7 +106,7 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
 
                         <div className="bg-[#1a1a2e] p-6 rounded-2xl border border-white/5 space-y-4">
                             <h3 className="font-bold text-gray-400 mb-2">Detalles</h3>
-                            <p className="text-sm"><span className="text-gray-500">Añadido:</span> {formatDate(game.created_at)}</p>
+                            <p className="text-sm" suppressHydrationWarning><span className="text-gray-500">Añadido:</span> {formatDate(game.created_at)}</p>
 
                             {game.download_link && (
                                 <a
@@ -158,6 +158,7 @@ export default function GameDetailPage({ params }: { params: Promise<{ id: strin
                                             value={status}
                                             onChange={(e) => setStatus(e.target.value as GameStatus)}
                                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-purple-500 appearance-none"
+                                            title="Cambiar estado del juego"
                                         >
                                             <option value="playing">Jugando</option>
                                             <option value="completed">Completado</option>

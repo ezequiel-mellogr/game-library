@@ -48,7 +48,7 @@ export default function GameListItem({ game }: { game: Game }) {
                         <span className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">
                             Añadido
                         </span>
-                        <span className="text-sm text-gray-400">
+                        <span className="text-sm text-gray-400" suppressHydrationWarning>
                             {formatDate(game.created_at)}
                         </span>
                     </div>

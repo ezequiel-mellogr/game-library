@@ -45,7 +45,7 @@ export default function GameCard({ game }: { game: Game }) {
 
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
                         <div className="flex gap-2">
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500" suppressHydrationWarning>
                                 {formatDate(game.created_at)}
                             </span>
                             {game.screenshots && game.screenshots.length > 0 && (
