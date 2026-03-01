@@ -42,6 +42,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'image.tmdb.org',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.blogspot.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.googleusercontent.com',
       }
     ],
   },

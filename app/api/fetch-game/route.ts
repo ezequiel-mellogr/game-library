@@ -18,7 +18,11 @@ export async function GET(request: Request) {
         // Fetch from Microlink and the direct URL simultaneously
         const [microlinkRes, rawRes] = await Promise.all([
             fetch(microlinkUrl),
-            fetch(url)
+            fetch(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            })
         ]);
 
         if (!microlinkRes.ok) {
@@ -27,6 +31,7 @@ export async function GET(request: Request) {
 
         const data = await microlinkRes.json();
         const html = await rawRes.text();
+        console.log('Raw HTML Length:', html.length);
         const $ = cheerio.load(html);
 
         let extractedScreenshots: string[] = [];
