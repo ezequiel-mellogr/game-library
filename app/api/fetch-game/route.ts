@@ -34,32 +34,69 @@ export async function GET(request: Request) {
         let extractedDownloadLink: string | null = null;
         let extractedDescription: string = '';
 
-        // Helper: add valid screenshot URL (avoid dupes and placeholders)
-        const addScreenshot = (url: string | undefined) => {
-            if (!url || url.startsWith('data:') || seenUrls.has(url)) return;
-            if (/^https?:\/\//.test(url) && !/\.(ico|gif|svg)(\?|$)/i.test(url)) {
-                seenUrls.add(url);
-                extractedScreenshots.push(url);
-            }
+        // The cover image returned by Microlink — we want to EXCLUDE this from screenshots
+        const coverImageUrl = data.status === 'success' ? (data.data.image?.url || null) : null;
+
+        // Helper: add valid screenshot URL (avoid dupes, placeholders, and cover image)
+        const addScreenshot = (imgUrl: string | undefined) => {
+            if (!imgUrl) return;
+            if (imgUrl.startsWith('data:')) return;
+            if (seenUrls.has(imgUrl)) return;
+            // Skip the cover/og image — it's already shown separately
+            if (coverImageUrl && imgUrl === coverImageUrl) return;
+            // Only allow http(s), skip icons/gifs/svgs
+            if (!/^https?:\/\//.test(imgUrl)) return;
+            if (/\.(ico|gif|svg)(\?|$)/i.test(imgUrl)) return;
+            // Skip images that are very likely to be site UI (logos, avatars, banners)
+            // by checking common URL patterns
+            const lowerUrl = imgUrl.toLowerCase();
+            if (lowerUrl.includes('/avatar') || lowerUrl.includes('/logo') || lowerUrl.includes('/banner') || lowerUrl.includes('/icon') || lowerUrl.includes('gravatar.com')) return;
+            seenUrls.add(imgUrl);
+            extractedScreenshots.push(imgUrl);
         };
 
-        // Screenshots: múltiples selectores para distintos formatos de Ryuugames y otros sitios
+        // Containers that are known to hold only navigation/UI images — skip these entirely
+        const skipContainerSelector = [
+            '.td-module-thumb',
+            '.td-related-span',
+            '.td-related-title',
+            '.td-sidebar',
+            '#sidebar',
+            '.widget',
+            '.td-header-wrap',
+            'header',
+            'footer',
+            'nav',
+            '.td-footer-wrapper',
+            '.td-ss-main-sidebar',
+        ].join(', ');
+
+        // Screenshot selectors ordered from most to least specific
         const contentSelectors = ['.vndetails', '.td-post-content', '.post-content', 'article', '[role="main"]'];
         for (const selector of contentSelectors) {
             $(`${selector} img`).each((_, el) => {
                 const $img = $(el);
-                // Evitar thumbnails de posts relacionados (218x150)
-                if ($img.closest('.td-module-thumb, .td-related-span').length) return;
+                // Skip images inside navigation/sidebar/related-post containers
+                if ($img.closest(skipContainerSelector).length) return;
+                // Skip very small images (likely icons/thumbnails) by checking width/height attrs
+                const width = parseInt($img.attr('width') || '0', 10);
+                const height = parseInt($img.attr('height') || '0', 10);
+                if ((width > 0 && width < 200) || (height > 0 && height < 150)) return;
                 const src = $img.attr('src');
-                const dataImg = $img.attr('data-img-url') || $img.attr('data-src');
-                addScreenshot(src?.startsWith('data:') ? dataImg : src);
+                const dataImg = $img.attr('data-img-url') || $img.attr('data-src') || $img.attr('data-lazy-src');
+                // Prefer lazy-load source over placeholder data URI
+                const resolvedSrc = src?.startsWith('data:') ? dataImg : src;
+                addScreenshot(resolvedSrc);
+                // Also add the data-img-url variant if different
+                if (dataImg && dataImg !== resolvedSrc) addScreenshot(dataImg);
             });
+            if (extractedScreenshots.length > 0) break;
         }
 
-        // Fallback: og:image si no hay capturas
+        // Fallback: og:image only if still nothing found AND it differs from cover
         if (extractedScreenshots.length === 0) {
             const ogImage = $('meta[property="og:image"]').attr('content');
-            if (ogImage) addScreenshot(ogImage);
+            if (ogImage && ogImage !== coverImageUrl) addScreenshot(ogImage);
         }
 
         $('a').each((_, el) => {
