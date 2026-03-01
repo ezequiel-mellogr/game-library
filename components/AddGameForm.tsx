@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { NewGame, GameStatus } from '@/lib/types';
+import ImageCarousel from './ImageCarousel';
 
 export default function AddGameForm() {
     const router = useRouter();
@@ -13,13 +14,17 @@ export default function AddGameForm() {
 
     const fetchMetadata = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!url) return;
+        const trimmedUrl = url.trim();
+        if (!trimmedUrl) return;
+        // Normalizar: agregar https:// si no tiene protocolo
+        const normalizedUrl = /^https?:\/\//i.test(trimmedUrl) ? trimmedUrl : `https://${trimmedUrl}`;
+        setUrl(normalizedUrl);
 
         setLoading(true);
         setError('');
 
         try {
-            const res = await fetch(`/api/fetch-game?url=${encodeURIComponent(url)}`);
+            const res = await fetch(`/api/fetch-game?url=${encodeURIComponent(normalizedUrl)}`);
             const data = await res.json();
 
             if (!res.ok) throw new Error(data.error || 'Error fetching metadata');
@@ -76,16 +81,15 @@ export default function AddGameForm() {
 
             <form onSubmit={fetchMetadata} className="mb-8 flex gap-3">
                 <input
-                    type="url"
+                    type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://store.steampowered.com/app/..."
-                    required
+                    placeholder="https://www.ryuugames.com/... o pega cualquier URL"
                     className="flex-1 bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-colors"
                 />
                 <button
                     type="submit"
-                    disabled={loading || !url}
+                    disabled={loading || !url.trim()}
                     className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                     {loading && !preview ? (
@@ -122,14 +126,21 @@ export default function AddGameForm() {
 
                         <div className="flex-1 min-w-0">
                             <h4 className="text-xl font-bold text-white mb-2 truncate">{preview.title}</h4>
-                            <p className="text-sm text-gray-400 line-clamp-3 mb-2">
+                            <div className="text-sm text-gray-400 mb-2 max-h-32 overflow-y-auto whitespace-pre-wrap">
                                 {preview.description || 'Sin descripción.'}
-                            </p>
+                            </div>
                             <a href={preview.original_url} target="_blank" rel="noopener noreferrer" className="text-xs text-purple-400 hover:underline">
                                 Ver URL original
                             </a>
                         </div>
                     </div>
+
+                    {preview.screenshots && preview.screenshots.length > 0 && (
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-400 mb-2">Vista previa de capturas</label>
+                            <ImageCarousel images={preview.screenshots} />
+                        </div>
+                    )}
 
                     <div className="mb-6">
                         <label className="block text-sm font-medium text-gray-400 mb-2">Estado Incial</label>
@@ -156,16 +167,7 @@ export default function AddGameForm() {
                         />
                     </div>
 
-                    {preview.screenshots && preview.screenshots.length > 0 && (
-                        <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-400 mb-2">Capturas extraídas ({preview.screenshots.length})</label>
-                            <div className="flex gap-2 overflow-x-auto pb-2 custom-scrollbar">
-                                {preview.screenshots.map((src, i) => (
-                                    <img key={i} src={src} alt={`Screenshot ${i}`} className="h-20 w-32 object-cover rounded shadow-md border border-white/10 shrink-0" />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+
 
                     <div className="flex justify-end gap-3">
                         <button

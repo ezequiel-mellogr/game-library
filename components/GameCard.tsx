@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Game } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
 import StatusBadge from './StatusBadge';
 
 export default function GameCard({ game }: { game: Game }) {
@@ -38,14 +39,21 @@ export default function GameCard({ game }: { game: Game }) {
                     <h3 className="text-lg font-bold text-white mb-2 line-clamp-1 group-hover:text-purple-400 transition-colors">
                         {game.title}
                     </h3>
-                    <p className="text-gray-400 text-sm line-clamp-2 flex-grow mb-4">
+                    <div className="text-gray-400 text-sm line-clamp-2 flex-grow mb-4 whitespace-pre-wrap">
                         {game.description || 'Sin descripción disponible.'}
-                    </p>
+                    </div>
 
                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                        <span className="text-xs text-gray-500">
-                            {new Date(game.created_at).toLocaleDateString()}
-                        </span>
+                        <div className="flex gap-2">
+                            <span className="text-xs text-gray-500">
+                                {formatDate(game.created_at)}
+                            </span>
+                            {game.screenshots && game.screenshots.length > 0 && (
+                                <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded border border-purple-500/20 uppercase font-bold tracking-wider">
+                                    + Galería
+                                </span>
+                            )}
+                        </div>
                         <div
                             className="text-purple-500 hover:text-purple-400 text-xs flex items-center gap-1"
                             onClick={(e) => {
